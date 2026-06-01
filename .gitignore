@@ -1,3 +1,4 @@
 logs.ndjson
 __pycache__/
 *.pyc
+test_gemini.py
