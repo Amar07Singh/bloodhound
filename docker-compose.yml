@@ -1,9 +1,24 @@
+# BLOODHOUND — local Elasticsearch (single node, no auth, demo-only)
+# Start:  docker compose up -d
+# Check:  curl http://localhost:9200
+# Stop:   docker compose down        (add -v to also wipe the data)
+#
+# This is intentionally a single insecure node on localhost. It is MORE reliable
+# than a cloud cluster for a demo and it is genuinely real Elasticsearch running
+# real EQL. Say that out loud — "local, but real" is a strength, not a fake.
+
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.0
-    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.1
+    container_name: bloodhound-es
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false
+      - xpack.security.enabled=false      # demo only — no passwords/TLS
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
     ports:
       - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12

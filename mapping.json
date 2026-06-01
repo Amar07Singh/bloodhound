@@ -1,0 +1,55 @@
+{
+  "mappings": {
+    "properties": {
+      "@timestamp":        { "type": "date" },
+      "event": {
+        "properties": {
+          "id":       { "type": "keyword" },
+          "dataset":  { "type": "keyword" },
+          "action":   { "type": "keyword" },
+          "category": { "type": "keyword" },
+          "outcome":  { "type": "keyword" }
+        }
+      },
+      "source": {
+        "properties": {
+          "ip":  { "type": "ip" },
+          "geo": {
+            "properties": {
+              "country_name": { "type": "keyword" },
+              "city_name":    { "type": "keyword" }
+            }
+          }
+        }
+      },
+      "destination": {
+        "properties": {
+          "ip":   { "type": "ip" },
+          "port": { "type": "long" }
+        }
+      },
+      "user": {
+        "properties": {
+          "name": { "type": "keyword" },
+          "id":   { "type": "keyword" }
+        }
+      },
+      "host": {
+        "properties": {
+          "name": { "type": "keyword" },
+          "id":   { "type": "keyword" }
+        }
+      },
+      "network": { "properties": { "bytes": { "type": "long" } } },
+      "process": {
+        "properties": {
+          "name":         { "type": "keyword" },
+          "command_line": { "type": "wildcard" },
+          "parent":       { "properties": { "name": { "type": "keyword" } } }
+        }
+      },
+      "session":     { "properties": { "id": { "type": "keyword" } } },
+      "hour_of_day": { "type": "integer" }
+    }
+  }
+}

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>BLOODHOUND</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080a0c; --panel:#0d1117; --line:#1c2530; --grid:#10161d;
+    --txt:#c8d2dc; --dim:#5d6b78; --green:#39ff8b; --amber:#ffb000;
+    --red:#ff3b5c; --cyan:#36e3ff; --blood:#c81e3a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--txt);
+    font-family:'JetBrains Mono',monospace; height:100vh; overflow:hidden;
+    background-image:radial-gradient(circle at 50% -20%, #14202b 0%, var(--bg) 60%);
+  }
+  /* scanline texture for the "terminal" feel */
+  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.18) 2px 3px);
+    opacity:.35;}
+  header{
+    height:54px;display:flex;align-items:center;gap:18px;padding:0 20px;
+    border-bottom:1px solid var(--line);background:rgba(10,14,18,.8);
+  }
+  .brand{font-family:'Oswald';font-weight:700;letter-spacing:3px;font-size:22px;
+    color:#fff;text-transform:uppercase;}
+  .brand b{color:var(--blood)}
+  .tagline{color:var(--dim);font-size:11px;letter-spacing:1px}
+  .status-pill{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--dim);box-shadow:0 0 8px currentColor}
+  .dot.on{background:var(--green);color:var(--green)}
+  .dot.off{background:var(--red);color:var(--red)}
+  .alert-counter{font-family:'Oswald';font-size:13px;color:var(--amber);letter-spacing:1px}
+
+  .stage{display:grid;grid-template-columns:1.1fr 1.3fr 1fr;height:calc(100vh - 54px)}
+  .col{border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+  .col:last-child{border-right:none}
+  .col-h{padding:10px 16px;font-size:11px;letter-spacing:2px;color:var(--dim);
+    text-transform:uppercase;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+  .col-h .k{color:var(--cyan)}
+  .col-body{flex:1;overflow-y:auto;padding:14px 16px}
+  .col-body::-webkit-scrollbar{width:6px}.col-body::-webkit-scrollbar-thumb{background:var(--line)}
+
+  /* LEFT: reasoning stream */
+  .ev{margin-bottom:14px;animation:rise .35s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .ev .lbl{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim)}
+  .ev.think .lbl{color:var(--cyan)} .ev.query .lbl{color:var(--amber)}
+  .ev.finding .lbl{color:var(--green)} .ev.conclude .lbl{color:var(--red)}
+  .ev .body{margin-top:3px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+  .ev.conclude .body{color:#fff;border-left:2px solid var(--red);padding-left:10px}
+  .raw{background:#06090c;border:1px solid var(--line);border-radius:4px;padding:8px;
+    font-size:10.5px;color:var(--green);max-height:130px;overflow:auto;margin-top:4px}
+  .raw .rl{font-size:9px;color:var(--amber);letter-spacing:1px}
+  .cursor{display:inline-block;width:8px;height:14px;background:var(--green);
+    animation:blink 1s steps(2) infinite;vertical-align:middle}
+  @keyframes blink{50%{opacity:0}}
+
+  /* CENTER: graph */
+  #graph{flex:1;position:relative;background:
+    linear-gradient(var(--grid) 1px,transparent 1px) 0 0/28px 28px,
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/28px 28px;}
+  .node{position:absolute;transform:translate(-50%,-50%);text-align:center;animation:pop .4s ease both}
+  @keyframes pop{from{opacity:0;transform:translate(-50%,-50%) scale(.6)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+  .node .chip{padding:7px 12px;border:1px solid var(--line);border-radius:6px;
+    background:#0c1218;font-size:12px;color:var(--txt);white-space:nowrap;box-shadow:0 4px 18px rgba(0,0,0,.5)}
+  .node.db .chip{border-color:var(--red);color:#fff;box-shadow:0 0 22px rgba(255,59,92,.45)}
+  .node.compromised .chip{border-color:var(--amber);color:#fff}
+  .node .ico{font-size:18px;margin-bottom:2px}
+  svg.edges{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .edge{stroke:var(--red);stroke-width:2;fill:none;stroke-dasharray:6 5;
+    filter:drop-shadow(0 0 6px rgba(255,59,92,.6));animation:dash 18s linear infinite, draw .8s ease forwards}
+  @keyframes dash{to{stroke-dashoffset:-220}}
+  @keyframes draw{from{stroke-dashoffset:240}to{stroke-dashoffset:0}}
+  .edge-lbl{fill:var(--amber);font-size:10px;font-family:'JetBrains Mono'}
+
+  /* RIGHT: timeline */
+  .pin{position:relative;padding:10px 10px 10px 22px;margin-bottom:10px;
+    border-left:2px solid var(--line);animation:rise .4s ease both}
+  .pin::before{content:"";position:absolute;left:-5px;top:14px;width:8px;height:8px;
+    border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+  .pin.exfil{border-left-color:var(--red)} .pin.exfil::before{background:var(--red);box-shadow:0 0 10px var(--red)}
+  .pin .t{font-size:11px;color:var(--amber)}
+  .pin .d{font-size:12px;margin-top:2px;line-height:1.4}
+  .pin .conf{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-top:3px}
+  .flagtag{display:inline-block;margin-top:4px;font-size:9px;letter-spacing:1px;
+    padding:2px 6px;border-radius:3px;background:rgba(255,59,92,.15);color:var(--red);border:1px solid var(--red)}
+
+  .controls{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(4,6,8,.92);z-index:20}
+  .panel{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:34px;max-width:440px;text-align:center}
+  .panel h1{font-family:'Oswald';letter-spacing:3px;font-size:30px;color:#fff;margin-bottom:6px}
+  .panel h1 b{color:var(--blood)}
+  .panel p{color:var(--dim);font-size:12px;line-height:1.6;margin-bottom:20px}
+  .go{font-family:'Oswald';letter-spacing:2px;font-size:15px;padding:12px 26px;cursor:pointer;
+    background:var(--blood);color:#fff;border:none;border-radius:6px;text-transform:uppercase}
+  .go:hover{background:#e02644}
+  .opt{display:flex;gap:10px;justify-content:center;margin-bottom:16px;font-size:11px;color:var(--dim)}
+  .opt label{cursor:pointer}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useRef} = React;
+
+// fixed positions for the known hosts (a real "board" layout)
+const POS = {
+  "ws-0042":      {x:18, y:30, ico:"💻", label:"ws-0042 (Seattle)"},
+  "app-prod-03":  {x:50, y:62, ico:"🖥️", label:"app-prod-03"},
+  "db-prod-02":   {x:82, y:34, ico:"🗄️", label:"db-prod-02", db:true},
+};
+
+function App(){
+  const [started,setStarted]=useState(false);
+  const [mode,setMode]=useState("mock");
+  const [dataSrc,setData]=useState("offline");
+  const [events,setEvents]=useState([]);     // left column
+  const [nodes,setNodes]=useState([]);        // center
+  const [edges,setEdges]=useState([]);
+  const [pins,setPins]=useState([]);          // right
+  const [es,setEs]=useState(false);
+  const [running,setRunning]=useState(false);
+  const leftRef=useRef();
+
+  useEffect(()=>{ fetch("/api/health").then(r=>r.json()).then(d=>setEs(d.es)).catch(()=>{}); },[]);
+  useEffect(()=>{ if(leftRef.current) leftRef.current.scrollTop=leftRef.current.scrollHeight; },[events]);
+
+  function addNode(name){
+    setNodes(n=> n.find(x=>x.name===name)?n:[...n,{name,...(POS[name]||{x:50,y:50,ico:"❔",label:name})}]);
+  }
+
+  function start(){
+    setStarted(true); setRunning(true);
+    setEvents([]);setNodes([]);setEdges([]);setPins([]);
+    const src=new EventSource(`/api/hunt?mode=${mode}&data=${dataSrc}&pause=1.5`);
+    src.onmessage=(m)=>{
+      const ev=JSON.parse(m.data);
+      if(ev.type==="think"||ev.type==="query"||ev.type==="finding"||ev.type==="conclude"||ev.type==="raw"||ev.type==="status"){
+        setEvents(e=>[...e,ev]);
+      }
+      if(ev.type==="graph_edge"){
+        addNode(ev.from); addNode(ev.to);
+        setEdges(g=>[...g,{from:ev.from,to:ev.to,label:ev.label}]);
+      }
+      if(ev.type==="timeline"){ setPins(p=>[...p,ev]); }
+      if(ev.type==="done"){ setRunning(false); src.close(); }
+      if(ev.type==="conclude"){
+        // light up the db node as the crown jewel
+        addNode("db-prod-02");
+      }
+    };
+    src.onerror=()=>{ setRunning(false); src.close(); };
+  }
+
+  return (<>
+    <header>
+      <span className="brand"><b>▰</b> BLOOD<b>HOUND</b></span>
+      <span className="tagline">retrospective threat hunt // elastic</span>
+      <span className="alert-counter">DAYS SINCE LAST ALERT: 6</span>
+      <span className="status-pill">
+        <span className={"dot "+(es?"on":"off")}></span>
+        {es?"Elasticsearch: live @ :9200":"Elasticsearch: offline (file mode)"}
+      </span>
+    </header>
+
+    <div className="stage">
+      {/* LEFT */}
+      <div className="col">
+        <div className="col-h"><span className="k">01</span> REASONING STREAM {running&&<span className="cursor"/>}</div>
+        <div className="col-body" ref={leftRef}>
+          {events.map((ev,i)=><EvBlock key={i} ev={ev}/>)}
+        </div>
+      </div>
+      {/* CENTER */}
+      <div className="col">
+        <div className="col-h"><span className="k">02</span> LATERAL MOVEMENT</div>
+        <div id="graph">
+          <svg className="edges">
+            {edges.map((e,i)=>{
+              const a=POS[e.from]||{x:50,y:50}, b=POS[e.to]||{x:50,y:50};
+              const x1=a.x+"%",y1=a.y+"%",x2=b.x+"%",y2=b.y+"%";
+              const mx=(a.x+b.x)/2+"%",my=(a.y+b.y)/2+"%";
+              return (<g key={i}>
+                <path className="edge" d={`M ${x1} ${y1} L ${x2} ${y2}`}/>
+                <text className="edge-lbl" x={mx} y={my}>{e.label||"pivot"}</text>
+              </g>);
+            })}
+          </svg>
+          {nodes.map((n,i)=>(
+            <div key={i} className={"node "+(n.db?"db":"compromised")} style={{left:n.x+"%",top:n.y+"%"}}>
+              <div className="ico">{n.ico}</div>
+              <div className="chip">{n.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* RIGHT */}
+      <div className="col">
+        <div className="col-h"><span className="k">03</span> ATTACK TIMELINE</div>
+        <div className="col-body">
+          {pins.map((p,i)=>(
+            <div key={i} className={"pin "+(p.kind==="exfil"?"exfil":"")}>
+              <div className="t">{p.when}</div>
+              <div className="d">{p.desc}</div>
+              {p.flag&&<span className="flagtag">{p.flag}</span>}
+              <div className="conf">confidence: {p.confidence||"medium"}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {!started&&(
+      <div className="controls">
+        <div className="panel">
+          <h1>BLOOD<b>HOUND</b></h1>
+          <p>Your SOC reported zero alerts this week.<br/>Watch what BLOODHOUND finds.</p>
+          <div className="opt">
+            <label><input type="radio" name="m" checked={mode==="mock"} onChange={()=>setMode("mock")}/> mock brain</label>
+            <label><input type="radio" name="m" checked={mode==="gemini"} onChange={()=>setMode("gemini")}/> gemini</label>
+            <label style={{marginLeft:14}}><input type="radio" name="d" checked={dataSrc==="offline"} onChange={()=>setData("offline")}/> file</label>
+            <label><input type="radio" name="d" checked={dataSrc==="live"} onChange={()=>setData("live")}/> elastic</label>
+          </div>
+          <button className="go" onClick={start}>▶ Begin Hunt</button>
+        </div>
+      </div>
+    )}
+  </>);
+}
+
+function EvBlock({ev}){
+  if(ev.type==="status") return <div className="ev" style={{opacity:.5}}><div className="body" style={{fontSize:11,color:"var(--dim)"}}>› {ev.msg}</div></div>;
+  if(ev.type==="raw") return <div className="ev"><div className="raw"><div className="rl">RAW ELASTIC RESPONSE</div>{ev.json}</div></div>;
+  const labels={think:"hypothesis",query:"query",finding:"evidence",conclude:"verdict"};
+  return (<div className={"ev "+ev.type}>
+    <div className="lbl">{labels[ev.type]||ev.type}</div>
+    <div className="body">{
+      ev.type==="think"? ev.interpretation+(ev.hypothesis?("\n→ "+ev.hypothesis):"") :
+      ev.type==="query"? ev.template_id+"("+JSON.stringify(ev.params)+")" :
+      ev.type==="finding"? ev.summary :
+      ev.conclusion
+    }</div>
+  </div>);
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

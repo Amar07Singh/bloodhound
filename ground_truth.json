@@ -1,0 +1,106 @@
+{
+  "attacker": "mark.chen",
+  "dwell_days": 6,
+  "exfil_bytes": 2470000000,
+  "exfil_destination": {
+    "ip": "185.220.101.47",
+    "country": "Netherlands"
+  },
+  "lateral_path": [
+    "ws-0042",
+    "app-prod-03",
+    "db-prod-02"
+  ],
+  "decoy_users": [
+    "donna.thompson",
+    "raj.anderson"
+  ],
+  "mitre": [
+    "T1078 Valid Accounts",
+    "T1021 Lateral Movement",
+    "T1059.001 PowerShell",
+    "T1041 Exfil over C2"
+  ],
+  "attack_events": [
+    {
+      "event.id": "33822eaab06b42b7",
+      "@timestamp": "2025-05-19T23:12:00Z",
+      "stage": "initial_access"
+    },
+    {
+      "event.id": "6688f91c00694931",
+      "@timestamp": "2025-05-19T23:12:07Z",
+      "stage": "initial_access"
+    },
+    {
+      "event.id": "5a725e09d43b4526",
+      "@timestamp": "2025-05-19T23:12:14Z",
+      "stage": "initial_access"
+    },
+    {
+      "event.id": "22006b85104e4b70",
+      "@timestamp": "2025-05-19T23:12:30Z",
+      "stage": "initial_access"
+    },
+    {
+      "event.id": "719adedd470b42ba",
+      "@timestamp": "2025-05-20T02:14:07Z",
+      "stage": "valid_accounts"
+    },
+    {
+      "event.id": "fabc859e7ef04962",
+      "@timestamp": "2025-05-20T02:34:51Z",
+      "stage": "impossible_travel"
+    },
+    {
+      "event.id": "1173b9b5ce0449a6",
+      "@timestamp": "2025-05-21T03:25:00Z",
+      "stage": "lateral_recon"
+    },
+    {
+      "event.id": "7dfddf83291642bb",
+      "@timestamp": "2025-05-21T03:55:00Z",
+      "stage": "lateral_recon"
+    },
+    {
+      "event.id": "2ffb506b39bc4baf",
+      "@timestamp": "2025-05-22T03:24:00Z",
+      "stage": "lateral_recon"
+    },
+    {
+      "event.id": "270d9d843b7e4c21",
+      "@timestamp": "2025-05-22T03:57:00Z",
+      "stage": "lateral_recon"
+    },
+    {
+      "event.id": "3a91d0f306fc455a",
+      "@timestamp": "2025-05-23T03:18:00Z",
+      "stage": "lateral_recon"
+    },
+    {
+      "event.id": "79cd7ae3172f4431",
+      "@timestamp": "2025-05-23T03:55:00Z",
+      "stage": "lateral_recon"
+    },
+    {
+      "event.id": "cb0d80907f2143e3",
+      "@timestamp": "2025-05-25T02:33:00Z",
+      "stage": "lateral_movement"
+    },
+    {
+      "event.id": "d9845a5e290a412f",
+      "@timestamp": "2025-05-25T02:41:30Z",
+      "stage": "lateral_movement"
+    },
+    {
+      "event.id": "5d9a8b92b14040e0",
+      "@timestamp": "2025-05-25T02:44:02Z",
+      "stage": "collection"
+    },
+    {
+      "event.id": "9fb0ce95072e439d",
+      "@timestamp": "2025-05-25T02:47:12Z",
+      "stage": "exfiltration"
+    }
+  ]
+}
