@@ -12,15 +12,6 @@ detective-board UI.
 Follow these in order. Commands are for **Windows PowerShell** (use `py`). On
 Mac/Linux replace `py` with `python3`.
 
-## 0. One-time fix (important)
-The web server looks for the UI at `static/index.html`, but `index.html` is
-currently in the main folder. Make a `static` folder and move it in:
-```
-mkdir static
-move index.html static\
-```
-Your folder should now have `static/index.html` inside it.
-
 ## 1. Install the tools (once)
 You need three things installed on your computer:
 - **Python 3.11+** — https://www.python.org/downloads/ (tick "Add to PATH")
