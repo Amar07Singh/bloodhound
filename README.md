@@ -16,7 +16,6 @@ Mac/Linux replace `py` with `python3`.
 You need three things installed on your computer:
 - **Python 3.11+** — https://www.python.org/downloads/ (tick "Add to PATH")
 - **Docker Desktop** — https://www.docker.com/products/docker-desktop/ (open it, leave it running)
-- A code editor like **VS Code** (optional but helpful)
 
 Check Python works:
 ```
